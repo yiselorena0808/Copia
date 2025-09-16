@@ -26,13 +26,4 @@ export default class Producto extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
-
-  @manyToMany(() => GestionEpp, {
-    pivotTable: 'gestion_epp_productos',
-    localKey: 'id_producto',
-    pivotForeignKey: 'producto_id',
-    relatedKey: 'id',
-    pivotRelatedForeignKey: 'gestion_id',
-  })
-  declare gestiones: ManyToMany<typeof GestionEpp>
 }

@@ -6,7 +6,12 @@ export default class Usuarios extends BaseSchema {
   async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
-
+      table.string('nombre', 100).notNullable()
+      table.string('apellido', 100).notNullable()
+      table.string('nombre_usuario', 100).unique().notNullable()
+      table.string('correo_electronico', 150).unique().notNullable()
+      table.string('cargo', 100)
+      table.text('contrasena').notNullable()
       table
         .integer('id_empresa')
         .unsigned()
@@ -24,13 +29,6 @@ export default class Usuarios extends BaseSchema {
         .inTable('area')
         .onDelete('CASCADE')
         .onUpdate('CASCADE')
-
-      table.string('nombre', 100).notNullable()
-      table.string('apellido', 100).notNullable()
-      table.string('nombre_usuario', 100).unique().notNullable()
-      table.string('correo_electronico', 150).unique().notNullable()
-      table.string('cargo', 100)
-      table.text('contrasena').notNullable()
 
       table.timestamp('created_at', { useTz: true }).defaultTo(this.now())
       table.timestamp('updated_at', { useTz: true }).defaultTo(this.now())

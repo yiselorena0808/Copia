@@ -1,82 +1,97 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import GestionEppService from '#services/GestionEppService'
 
+const gestionService = new GestionEppService()
+
 export default class GestionEppController {
-  // Crear gestión
-  async store({ request, auth, response }: HttpContext) {
-    const usuario = auth.user!
-    const { productosIds, cantidad, importancia, estado, fecha_creacion } =
-      request.body()
-
+  async crear({ request, response }: HttpContext) {
     try {
-      const gestion = await GestionEppService.crearGestion(
-        { cantidad, importancia, estado, fecha_creacion },
-        productosIds,
-        usuario
-      )
+      const usuario = (request as any).user
+      if (!usuario) {
+        return response.status(401).json({ error: 'Usuario no autenticado' })
+      }
 
-      return response.created({
-        mensaje: 'Gestión creada correctamente',
-        datos: gestion,
-      })
-    } catch (err: any) {
-      return response.status(400).send({ mensaje: err.message })
+      // Datos que vienen del formulario
+      const datos = request.only([
+        'cedula',
+        'id_cargo',
+        'productos',
+        'importancia',
+        'estado',
+        'fecha_creacion',
+      ])
+
+      // Datos que se completan desde el JWT
+      datos.nombre = usuario.nombre
+      datos.apellido = usuario.apellido
+      datos.id_empresa = usuario.id_empresa
+
+      const gestion = await gestionService.crearGestionEpp(datos)
+
+      return response.status(201).json({ mensaje: 'Gestión EPP creada', gestion })
+    } catch (error) {
+      return response.status(400).json({ error: error.message })
     }
   }
 
-  // Listar gestiones
-  async index({ auth, response }: HttpContext) {
-    const usuario = auth.user!
-    const gestiones = await GestionEppService.listarGestiones(usuario)
-    return response.ok(gestiones)
-  }
-
-  // Mostrar gestión por ID
-  async show({ params, auth, response }: HttpContext) {
-    const usuario = auth.user!
+  async listar({ request, response }: HttpContext) {
     try {
-      const gestion = await GestionEppService.obtenerGestion(params.id, usuario)
-      return response.ok(gestion)
-    } catch (err: any) {
-      return response.status(404).send({ mensaje: err.message })
+      const usuario = (request as any).user
+      const empresaId = usuario.id_empresa
+
+      const gestiones = await gestionService.listarGestiones(empresaId)
+      return response.json({ datos: gestiones })
+    } catch (error) {
+      return response.status(400).json({ error: error.message })
     }
   }
 
-  // Actualizar gestión
-  async update({ params, request, auth, response }: HttpContext) {
-    const usuario = auth.user!
-    const { productosIds, cantidad, importancia, estado, fecha_creacion } =
-      request.body()
-
+  async mostrar({ params, request, response }: HttpContext) {
     try {
-      const gestion = await GestionEppService.actualizarGestion(
-        params.id,
-        { cantidad, importancia, estado, fecha_creacion },
-        productosIds,
-        usuario
-      )
+      const usuario = (request as any).user
+      const empresaId = usuario.id_empresa
 
-      return response.ok({ mensaje: 'Gestión actualizada', datos: gestion })
-    } catch (err: any) {
-      return response.status(400).send({ mensaje: err.message })
+      const gestion = await gestionService.obtenerGestionPorId(params.id, empresaId)
+      return response.json(gestion)
+    } catch (error) {
+      return response.status(404).json({ error: 'Gestión no encontrada' })
     }
   }
 
-  // Eliminar gestión
-  async destroy({ params, auth, response }: HttpContext) {
-    const usuario = auth.user!
+  async actualizar({ params, request, response }: HttpContext) {
     try {
-      const result = await GestionEppService.eliminarGestion(params.id, usuario)
-      return response.ok(result)
-    } catch (err: any) {
-      return response.status(400).send({ mensaje: err.message })
+      const usuario = (request as any).user
+      const empresaId = usuario.id_empresa
+
+      const datos = request.only([
+        'cedula',
+        'id_cargo',
+        'productos',
+        'importancia',
+        'estado',
+        'fecha_creacion',
+      ])
+
+      // mantener consistencia de nombre y apellido desde JWT
+      datos.nombre = usuario.nombre
+      datos.apellido = usuario.apellido
+
+      const gestion = await gestionService.actualizarGestion(params.id, empresaId, datos)
+      return response.json({ mensaje: 'Gestión EPP actualizada', gestion })
+    } catch (error) {
+      return response.status(400).json({ error: error.message })
     }
   }
 
-  // Listar productos filtrados por cargo
-  async productosPorCargo({ auth, response }: HttpContext) {
-    const usuario = auth.user!
-    const productos = await GestionEppService.productosPorCargo(usuario.cargo)
-    return response.ok(productos)
+  async eliminar({ params, request, response }: HttpContext) {
+    try {
+      const usuario = (request as any).user
+      const empresaId = usuario.id_empresa
+
+      const resultado = await gestionService.eliminarGestion(params.id, empresaId)
+      return response.json(resultado)
+    } catch (error) {
+      return response.status(400).json({ error: error.message })
+    }
   }
 }

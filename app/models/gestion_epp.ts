@@ -4,7 +4,7 @@ import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
 import Usuario from '#models/usuario'
 import Empresa from '#models/empresa'
 import Area from '#models/area'
-import Producto from '#models/producto'
+import Cargo from './cargo.js'
 
 export default class GestionEpp extends BaseModel {
   public static table = 'gestion_epp'
@@ -25,7 +25,10 @@ export default class GestionEpp extends BaseModel {
   declare cedula: string
 
   @column()
-  declare cargo: string
+  declare id_cargo: number
+
+  @column()
+  declare productos: string
 
   @column()
   declare importancia: string
@@ -34,13 +37,13 @@ export default class GestionEpp extends BaseModel {
   declare estado: string | null
 
   @column()
-  declare fecha_creacion: string
-
-  @column()
   declare id_empresa: number
 
   @column()
   declare id_area: number
+
+  @column()
+  declare fecha_creacion: string
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -57,12 +60,8 @@ export default class GestionEpp extends BaseModel {
   @belongsTo(() => Area)
   declare area: BelongsTo<typeof Area>
 
-  @manyToMany(() => Producto, {
-    pivotTable: 'gestion_epp_productos',
-    localKey: 'id',
-    pivotForeignKey: 'gestion_id',
-    relatedKey: 'id_producto',
-    pivotRelatedForeignKey: 'producto_id',
+  @belongsTo(() => Cargo, {
+    foreignKey: 'id_cargo',
   })
-  declare productos: ManyToMany<typeof Producto>
+  declare cargo: BelongsTo<typeof Cargo>
 }
