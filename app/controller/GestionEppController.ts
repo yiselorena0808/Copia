@@ -11,20 +11,28 @@ export default class GestionEppController {
         return response.status(401).json({ error: 'Usuario no autenticado' })
       }
 
-      // Datos que vienen del formulario
       const datos = request.only([
+        'id_usuario',
+        'nombre',
+        'apellido',
         'cedula',
         'id_cargo',
         'productos',
         'importancia',
         'estado',
         'fecha_creacion',
+        'id_empresa',
+        'id_area',
       ])
 
-      // Datos que se completan desde el JWT
+      datos.id_usuario = usuario.id
       datos.nombre = usuario.nombre
       datos.apellido = usuario.apellido
       datos.id_empresa = usuario.id_empresa
+      datos.id_area = usuario.id_area || null
+
+      // Estado por defecto si no viene
+      if (!datos.estado) datos.estado = 'Pendiente'
 
       const gestion = await gestionService.crearGestionEpp(datos)
 
@@ -64,17 +72,24 @@ export default class GestionEppController {
       const empresaId = usuario.id_empresa
 
       const datos = request.only([
+        'id_usuario',
+        'nombre',
+        'apellido',
         'cedula',
         'id_cargo',
         'productos',
         'importancia',
         'estado',
         'fecha_creacion',
+        'id_empresa',
+        'id_area',
       ])
 
-      // mantener consistencia de nombre y apellido desde JWT
+      // Mantener consistencia desde JWT
+      datos.id_usuario = usuario.id
       datos.nombre = usuario.nombre
       datos.apellido = usuario.apellido
+      datos.id_empresa = empresaId
 
       const gestion = await gestionService.actualizarGestion(params.id, empresaId, datos)
       return response.json({ mensaje: 'Gestión EPP actualizada', gestion })

@@ -1,107 +1,113 @@
-import ReporteService from '#services/ReporteService'
-import { messages } from '@vinejs/vine/defaults'
 import type { HttpContext } from '@adonisjs/core/http'
+import ReporteService from '#services/ReporteService'
+import cloudinary from '#config/cloudinary'
+import { messages } from '@vinejs/vine/defaults'
 
 const reporteService = new ReporteService()
 
 class ReportesController {
-  // Crear un reporte asignado a la empresa del usuario logueado
-  async crearReporte({ request, response }: HttpContext) {
+  // Crear reporte
+  public async crearReporte({ request, response }: HttpContext) {
     try {
-      const user = (request as any).authUsuario
-      if (!user || !user.idEmpresa) {
-        return response.unauthorized({ error: 'Usuario no tiene empresa asociada' })
-      }
+      const usuario = (request as any).user
+      if (!usuario) return response.status(401).json({ error: 'Usuario no autenticado' })
 
-      const datos = request.only([
-        'nombre_usuario',
-        'cargo',
-        'cedula',
-        'fecha',
-        'lugar',
-        'descripcion',
-        'imagen',
-        'archivos',
-        'estado',
-      ]) as any
+      const cargo = request.input('cargo')
+      const cedula = request.input('cedula')
+      const fecha = request.input('fecha')
+      const lugar = request.input('lugar')
+      const descripcion = request.input('descripcion')
+      const imagen = request.file('imagen')
+      const archivos = request.file('archivos')
 
-      datos.id_empresa = user.idEmpresa
-      datos.id_usuario = user.id
+      const reporte = await reporteService.crear({
+        cargo,
+        cedula,
+        fecha,
+        lugar,
+        descripcion,
+        imagen,
+        archivos,
+        id_usuario: usuario.id,
+        id_empresa: usuario.id_empresa,
+        nombre_usuario: usuario.nombre
+      })
 
-      const reporteCreado = await reporteService.crear(user.idEmpresa, datos)
-      return response.status(201).json({ mensaje: 'Reporte creado', datos: reporteCreado })
+      return response.json(reporte)
     } catch (error) {
-      return response.status(500).json({ error: error.message, messages })
+      console.error(error)
+      return response.status(500).json({ error: 'Error interno', detalle: error.message })
     }
   }
 
-  // Listar solo los reportes de la empresa del usuario logueado
-  async listarReportes({ request, response }: HttpContext) {
+  // Listar reportes de la empresa
+  public async listarReportes({ request, response }: HttpContext) {
     try {
-      const user = (request as any).authUsuario
-      if (!user || !user.idEmpresa) {
-        return response.unauthorized({ error: 'Usuario no tiene empresa asociada' })
-      }
+      const usuario = (request as any).usuario
+      if (!usuario) return response.unauthorized({ error: 'Usuario no autenticado' })
 
-      const reportes = await reporteService.listar(user.idEmpresa)
+      const reportes = await reporteService.listar(usuario.idEmpresa)
       return response.json({ datos: reportes })
     } catch (error) {
-      return response.status(500).json({ error: error.message, messages })
+      console.error('❌ Error al listar reportes:', error)
+      return response.internalServerError({ error: 'Error al listar reportes' })
     }
   }
 
-  // Obtener detalle por ID (solo de la misma empresa)
-  async listarReporteId({ params, response }: HttpContext) {
+  // Listar reporte por ID
+  public async listarReporteId({ request, params, response }: HttpContext) {
     try {
-      const user = (params as any).authUsuario
-      if (!user || !user.idEmpresa) {
-        return response.unauthorized({ error: 'Usuario no tiene empresa asociada' })
-      }
+      const usuario = (request as any).usuario
+      if (!usuario) return response.unauthorized({ error: 'Usuario no autenticado' })
 
-      const reporte = await reporteService.listarId(params.id, user.idEmpresa)
+      const reporte = await reporteService.listarId(params.id, usuario.idEmpresa)
+      if (!reporte) return response.notFound({ error: 'Reporte no encontrado' })
+
       return response.json({ datos: reporte })
     } catch (error) {
-      return response.status(500).json({ error: error.message, messages })
+      console.error('❌ Error al obtener reporte:', error)
+      return response.internalServerError({ error: 'Error al obtener el reporte' })
     }
   }
 
   // Actualizar un reporte
-  async actualizarReporte({ params, request, response }: HttpContext) {
+  public async actualizarReporte({ params, request, response }: HttpContext) {
     try {
-      const user = (request as any).authUsuario
-      if (!user || !user.idEmpresa) {
-        return response.unauthorized({ error: 'Usuario no tiene empresa asociada' })
+      const usuario = (request as any).usuario
+      if (!usuario) return response.unauthorized({ error: 'Usuario no autenticado' })
+
+      const datos = request.only(['cargo', 'cedula', 'fecha', 'lugar', 'descripcion', 'estado', 'nombre_usuario']) as any
+
+      const imagenFile = request.file('imagen', { size: '20mb', extnames: ['jpg', 'jpeg', 'png', 'mp4', 'mov'] })
+      const archivoFile = request.file('archivos', { size: '10mb', extnames: ['pdf', 'doc', 'docx', 'xls', 'xlsx'] })
+
+      if (imagenFile && imagenFile.tmpPath) {
+        const upload = await cloudinary.uploader.upload(imagenFile.tmpPath, { folder: 'reportes', resource_type: 'auto' })
+        datos.imagen = upload.secure_url
       }
 
-      const datos = request.only([
-        'nombre_usuario',
-        'cargo',
-        'cedula',
-        'fecha',
-        'lugar',
-        'descripcion',
-        'imagen',
-        'archivos',
-        'estado',
-      ])
-      const reporteActualizado = await reporteService.actualizar(params.id, user.idEmpresa, datos)
+      if (archivoFile && archivoFile.tmpPath) {
+        const upload = await cloudinary.uploader.upload(archivoFile.tmpPath, { folder: 'reportes', resource_type: 'auto' })
+        datos.archivos = upload.secure_url
+      }
+
+      const reporteActualizado = await reporteService.actualizar(params.id, usuario.idEmpresa, datos)
       return response.json({ mensaje: 'Reporte actualizado', datos: reporteActualizado })
-    } catch (error) {
+    } catch (error: any) {
+      console.error('❌ Error en actualizarReporte:', error)
       return response.status(500).json({ error: error.message, messages })
     }
   }
 
   // Eliminar un reporte
-  async eliminarReporte({ params, request, response }: HttpContext) {
+  public async eliminarReporte({ params, request, response }: HttpContext) {
     try {
-      const user = (request as any).authUsuario
-      if (!user || !user.idEmpresa) {
-        return response.unauthorized({ error: 'Usuario no tiene empresa asociada' })
-      }
+      const usuario = (request as any).usuario
+      if (!usuario) return response.unauthorized({ error: 'Usuario no autenticado' })
 
-      await reporteService.eliminar(params.id, user.idEmpresa)
+      await reporteService.eliminar(params.id, usuario.idEmpresa)
       return response.json({ mensaje: 'Reporte eliminado' })
-    } catch (error) {
+    } catch (error: any) {
       return response.status(500).json({ error: error.message })
     }
   }

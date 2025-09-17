@@ -1,60 +1,14 @@
-import ListaChequeoService from '#services/ListaChequeoService'
-import { messages } from '@vinejs/vine/defaults'
 import type { HttpContext } from '@adonisjs/core/http'
+import ListaChequeoService from '#services/ListaChequeoService'
+
+const listaService = new ListaChequeoService()
 
 export default class ListaChequeoController {
-  private service: ListaChequeoService
-
-  constructor() {
-    this.service = new ListaChequeoService()
-  }
-
-  // Crear lista
-  async crearLista({ request, response }: HttpContext) {
+  public async crear({ request, response }: HttpContext) {
     try {
-      const datos = request.only([
-        'fecha',
-        'hora',
-        'modelo',
-        'marca',
-        'soat',
-        'tecnico',
-        'kilometraje',
-      ]) as any
+      const usuario = (request as any).user
+      if (!usuario) return response.unauthorized({ error: 'Usuario no autenticado' })
 
-      const user = (request as any).user
-      if (!user) {
-        return response.unauthorized({ error: 'Usuario no autenticado' })
-      }
-
-      datos.id_usuario = user.id
-      datos.usuario_nombre = user.nombre  // 👈 ahora sí el nombre real del usuario
-      datos.id_empresa = user.id_empresa
-
-      const nuevaLista = await this.service.crear(datos)
-      return response.created(nuevaLista)
-    } catch (error) {
-      console.error('Error crearLista:', error)
-      return response.status(500).json({ error: error.message, messages })
-    }
-  }
-
-  // Listar listas
-  async listarListas({ response, request }: HttpContext) {
-    try {
-      const user = (request as any).user
-      const listas = await this.service.listar(user.id_empresa)
-      return response.ok(listas)
-    } catch (error) {
-      console.error('Error listarListas:', error)
-      return response.status(500).json({ error: error.message, messages })
-    }
-  }
-
-  // Actualizar lista
-  async actualizarLista({ request, response, params }: HttpContext) {
-    try {
-      const id = params.id
       const datos = request.only([
         'fecha',
         'hora',
@@ -65,24 +19,80 @@ export default class ListaChequeoController {
         'kilometraje',
       ])
 
-      const user = (request as any).user
-      const lista = await this.service.actualizar(id, user.id_empresa, datos)
-      return response.ok(lista)
+      const lista = await listaService.crear(datos, usuario)
+
+      return response.json({ message: 'Lista creada correctamente', datos: lista })
     } catch (error) {
-      console.error('Error actualizarLista:', error)
-      return response.status(500).json({ error: error.message, messages })
+      console.error(error)
+      return response.internalServerError({ error: 'Error creando la lista de chequeo' })
     }
   }
 
-  // Eliminar lista
-  async eliminarLista({ params, response, request }: HttpContext) {
+  public async listar({ response, request }: HttpContext) {
     try {
-      const user = (request as any).user
-      const result = await this.service.eliminar(params.id, user.id_empresa)
-      return response.ok(result)
+      const usuario = (request as any).user
+      if (!usuario) return response.unauthorized({ error: 'Usuario no autenticado' })
+
+      const listas = await listaService.listar(usuario.id_empresa)
+      return response.json({ datos: listas })
     } catch (error) {
-      console.error('Error eliminarLista:', error)
-      return response.status(500).json({ error: error.message, messages })
+      console.error(error)
+      return response.internalServerError({ error: 'Error al listar las listas de chequeo' })
+    }
+  }
+
+  public async listarPorId({ response, request, params }: HttpContext) {
+    try {
+      const usuario = (request as any).user
+      if (!usuario) return response.unauthorized({ error: 'Usuario no autenticado' })
+
+      const lista = await listaService.listarPorId(usuario.id_empresa, params.id)
+      if (!lista) return response.notFound({ error: 'Lista no encontrada' })
+
+      return response.json({ datos: lista })
+    } catch (error) {
+      console.error(error)
+      return response.internalServerError({ error: 'Error al obtener la lista de chequeo' })
+    }
+  }
+
+  public async actualizar({ request, response, params }: HttpContext) {
+    try {
+      const usuario = (request as any).user
+      if (!usuario) return response.unauthorized({ error: 'Usuario no autenticado' })
+
+      const datos = request.only([
+        'fecha',
+        'hora',
+        'modelo',
+        'marca',
+        'soat',
+        'tecnico',
+        'kilometraje',
+      ])
+
+      const lista = await listaService.actualizar(usuario.id_empresa, params.id, datos)
+      if (!lista) return response.notFound({ error: 'Lista no encontrada' })
+
+      return response.json({ message: 'Lista actualizada correctamente', datos: lista })
+    } catch (error) {
+      console.error(error)
+      return response.internalServerError({ error: 'Error al actualizar la lista de chequeo' })
+    }
+  }
+
+  public async eliminar({ response, request, params }: HttpContext) {
+    try {
+      const usuario = (request as any).user
+      if (!usuario) return response.unauthorized({ error: 'Usuario no autenticado' })
+
+      const eliminado = await listaService.eliminar(usuario.id_empresa, params.id)
+      if (!eliminado) return response.notFound({ error: 'Lista no encontrada' })
+
+      return response.json({ message: 'Lista eliminada correctamente' })
+    } catch (error) {
+      console.error(error)
+      return response.internalServerError({ error: 'Error al eliminar la lista de chequeo' })
     }
   }
 }

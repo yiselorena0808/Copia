@@ -1,31 +1,47 @@
+// app/services/ListaChequeoService.ts
 import ListaChequeo from '#models/lista_chequeo'
 
 export default class ListaChequeoService {
-  async crear(datos: any) {
-    return await ListaChequeo.create(datos)
+  // Crear lista
+  public async crear(datos: any, usuario: any) {
+    return await ListaChequeo.create({
+      ...datos,
+      id_usuario: usuario.id,
+      id_empresa: usuario.id_empresa,
+    })
   }
 
-  async listar(id_empresa: number) {
-    return await ListaChequeo.query().where('id_empresa', id_empresa)
+  // Listar todas las listas de la empresa
+  public async listar(idEmpresa: number) {
+    return await ListaChequeo.query()
+      .where('id_empresa', idEmpresa)
+      .orderBy('fecha', 'desc')
   }
 
-  async actualizar(id: number, id_empresa: number, datos: any) {
-    const lista = await ListaChequeo.query()
-      .where('id', id)
-      .where('id_empresa', id_empresa)
-      .firstOrFail()
+  // Listar una lista por ID
+  public async listarPorId(idEmpresa: number, id: number) {
+    return await ListaChequeo.query()
+      .where('id_empresa', idEmpresa)
+      .andWhere('id', id)
+      .first()
+  }
 
-    await lista.merge(datos).save()
+  // Actualizar lista
+  public async actualizar(idEmpresa: number, id: number, datos: any) {
+    const lista = await this.listarPorId(idEmpresa, id)
+    if (!lista) return null
+
+    lista.merge(datos)
+    await lista.save()
     return lista
   }
 
-  async eliminar(id: number, id_empresa: number) {
-    const lista = await ListaChequeo.query()
-      .where('id', id)
-      .where('id_empresa', id_empresa)
-      .firstOrFail()
+  // Eliminar lista
+  public async eliminar(idEmpresa: number, id: number) {
+    const lista = await this.listarPorId(idEmpresa, id)
+    if (!lista) return null
 
     await lista.delete()
-    return { mensaje: 'Lista eliminada correctamente' }
+    return true
   }
 }
