@@ -5,8 +5,7 @@ import jwt from 'jsonwebtoken'
 const SECRET = process.env.JWT_SECRET || 'sstrict'
 
 class UsuarioService {
-  // Registro de usuario
-   async register(
+  async register(
     id_empresa: number,
     id_area: number,
     nombre: string,
@@ -17,72 +16,72 @@ class UsuarioService {
     contrasena: string,
     confirmacion: string
   ) {
-    if (contrasena !== confirmacion) return { mensaje: 'Las contraseñas no coinciden', ok: false }
-
-    const existingUser = await Usuario.query().where('correo_electronico', correo_electronico).first()
-    if (existingUser) return { mensaje: 'El correo ya está registrado', ok: false }
+    if (contrasena !== confirmacion) {
+      return { mensaje: 'Las contraseñas no coinciden' }
+    }
 
     const hash = await bcrypt.hash(contrasena, 10)
 
     const user = await Usuario.create({
-      id_empresa, id_area, nombre, apellido,
-      nombre_usuario, correo_electronico, cargo,
-      contrasena: hash
+      id_empresa,
+      id_area,
+      nombre,
+      apellido,
+      nombre_usuario,
+      correo_electronico,
+      cargo,
+      contrasena: hash,
     })
 
-    const usuarioCompleto = await Usuario.query().where('id', user.id).preload('empresa').preload('area').first()
-
-    return { mensaje: 'Registro correcto', ok: true, user: usuarioCompleto }
+    return {
+      mensaje: 'Registro correcto',
+      user: await Usuario.query()
+        .where('id', user.id)
+        .preload('empresa')
+        .preload('area')
+        .first(),
+    }
   }
 
-  // Login
   async login(correo_electronico: string, contrasena: string) {
-    if (!correo_electronico || !contrasena)
-      return { ok: false, msj: 'Correo y contraseña son obligatorios' }
+    if (!correo_electronico || !contrasena) {
+      throw new Error('Campos obligatorios')
+    }
 
-    const usuario = await Usuario.query().where('correo_electronico', correo_electronico).preload('empresa').preload('area').first()
-    if (!usuario) return { ok: false, msj: 'Correo o contraseña incorrectos' }
+    const usuario = await Usuario.query()
+      .where('correo_electronico', correo_electronico)
+      .preload('empresa')
+      .preload('area')
+      .first()
+
+    if (!usuario) throw new Error('El usuario no existe')
 
     const isValid = await bcrypt.compare(contrasena, usuario.contrasena)
-    if (!isValid) return { ok: false, msj: 'Correo o contraseña incorrectos' }
+    if (!isValid) throw new Error('Contraseña incorrecta')
 
     const token = jwt.sign(
       {
         id: usuario.id,
-        nombre: `${usuario.nombre} ${usuario.apellido}`, // nombre completo
-        idEmpresa: usuario.id_empresa,
-        correoElectronico: usuario.correo_electronico
+        correoElectronico: usuario.correo_electronico,
+        id_empresa: usuario.id_empresa,
+        nombre: `${usuario.nombre} ${usuario.apellido}`, // 👈 nombre completo
       },
       SECRET,
-      { expiresIn: '8h' }
+      { expiresIn: '1h' }
     )
 
-    return {
-      ok: true,
-      mensaje: 'Login correcto',
-      token,
-      user: {
-        id: usuario.id,
-        nombre: `${usuario.nombre} ${usuario.apellido}`,
-        correoElectronico: usuario.correo_electronico,
-        idEmpresa: usuario.id_empresa,
-        empresa: usuario.empresa,
-        area: usuario.area
-      }
-    }
+    return { mensaje: 'Login correcto', token, user: usuario }
   }
-  
-  // Listar todos los usuarios de una empresa
+
   async listar(empresaId: number) {
-    return Usuario.query()
+    return await Usuario.query()
       .where('id_empresa', empresaId)
       .preload('empresa')
       .preload('area')
   }
 
-  // Listar usuario por ID y empresa
   async listarId(id: number, empresaId: number) {
-    return Usuario.query()
+    return await Usuario.query()
       .where('id', id)
       .andWhere('id_empresa', empresaId)
       .preload('empresa')
@@ -90,7 +89,6 @@ class UsuarioService {
       .first()
   }
 
-  // Actualizar usuario
   async actualizar(id: number, datos: Partial<Usuario>, empresaId: number) {
     const usuario = await Usuario.query()
       .where('id', id)
@@ -103,7 +101,6 @@ class UsuarioService {
     return usuario
   }
 
-  // Eliminar usuario
   async eliminar(id: number, empresaId: number) {
     const usuario = await Usuario.query()
       .where('id', id)
@@ -112,10 +109,9 @@ class UsuarioService {
     if (!usuario) return { mensaje: 'Usuario no encontrado o autorizado' }
 
     await usuario.delete()
-    return { mensaje: 'Usuario eliminado correctamente' }
+    return { mensaje: 'Usuario eliminado' }
   }
 
-  // Conteo total de usuarios
   async conteo() {
     const usuarios = await Usuario.query()
     return { total: usuarios.length, usuarios }

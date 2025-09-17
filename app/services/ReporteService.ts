@@ -1,6 +1,6 @@
 import Reporte from "#models/reporte"
 
-interface DatosReporte {
+export interface DatosReporte {
   id_usuario: number
   id_empresa: number
   nombre_usuario: string
@@ -11,7 +11,7 @@ interface DatosReporte {
   descripcion: string
   imagen?: string
   archivos?: string
-  estado: string
+  estado?: string
 }
 
 export default class ReporteService {
@@ -21,6 +21,7 @@ export default class ReporteService {
     reporte.fill({
       ...datos,
       id_empresa: idEmpresa,
+      estado: datos.estado,
     })
     await reporte.save()
     return reporte
@@ -28,22 +29,24 @@ export default class ReporteService {
 
   // Listar reportes por empresa
   async listar(idEmpresa: number) {
-    return await Reporte.query().where('id_empresa', idEmpresa).orderBy('fecha', 'desc')
+    return Reporte.query()
+      .where("id_empresa", idEmpresa)
+      .orderBy("fecha", "desc")
   }
 
-  // Listar reporte por id y empresa
+  // Listar reporte por ID y empresa
   async listarId(id: number, idEmpresa: number) {
-    return await Reporte.query()
-      .where('id', id)
-      .andWhere('id_empresa', idEmpresa)
+    return Reporte.query()
+      .where("id", id)
+      .andWhere("id_empresa", idEmpresa)
       .firstOrFail()
   }
 
   // Actualizar reporte
   async actualizar(id: number, idEmpresa: number, datos: Partial<DatosReporte>) {
     const reporte = await Reporte.query()
-      .where('id', id)
-      .andWhere('id_empresa', idEmpresa)
+      .where("id", id)
+      .andWhere("id_empresa", idEmpresa)
       .firstOrFail()
 
     reporte.merge(datos)
@@ -54,16 +57,17 @@ export default class ReporteService {
   // Eliminar reporte
   async eliminar(id: number, idEmpresa: number) {
     const reporte = await Reporte.query()
-      .where('id', id)
-      .andWhere('id_empresa', idEmpresa)
+      .where("id", id)
+      .andWhere("id_empresa", idEmpresa)
       .firstOrFail()
 
     await reporte.delete()
-    return { mensaje: 'Reporte eliminado' }
+    return { mensaje: "Reporte eliminado" }
   }
 
-  // Conteo total de reportes (opcional)
+  // Conteo total de reportes
   async conteo() {
-    return await Reporte.query().count('* as total')
+    const result = await Reporte.query().count("* as total")
+    return result[0]
   }
 }
