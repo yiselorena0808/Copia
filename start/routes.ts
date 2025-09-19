@@ -17,3 +17,7 @@ import './routes/TenantRoutes.js'
 import './routes/EmpresaRoutes.js'
 
 import './routes/CargosRoutes.js'
+
+import './routes/DashboardRoutes.js'
+
+import './routes/ProductosRoutes.js'

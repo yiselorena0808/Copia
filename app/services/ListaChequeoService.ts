@@ -1,5 +1,4 @@
-// app/services/ListaChequeoService.ts
-import ListaChequeo from '#models/lista_chequeo'
+import ListaChequeo from "#models/lista_chequeo"
 
 export default class ListaChequeoService {
   // Crear lista

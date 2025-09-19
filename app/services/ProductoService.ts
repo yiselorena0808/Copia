@@ -2,51 +2,37 @@ import Producto from "#models/producto"
 
 export default class ProductoService {
   // Crear producto
-  async crearProducto(data: {
-    nombre: string
-    descripcion?: string | null
-    cargo_asignado?: string
-    estado?: boolean
-  }) {
-    const producto = await Producto.create(data)
+  public async crear(datos: any) {
+    const producto = await Producto.create(datos)
     return producto
   }
 
-  // Listar productos, opcionalmente filtrados por cargo
-  async listarProductos(cargo?: string) {
-    const query = Producto.query().where('estado', true)
-    if (cargo) {
-      query.andWhere('cargo_asignado', cargo)
-    }
-    return query
+  // Listar todos los productos
+  public async listar() {
+    const productos = await Producto.query().orderBy('id_producto', 'asc')
+    return productos
   }
 
-  // Obtener un producto por ID
-  async obtenerProducto(id: number) {
-    const producto = await Producto.find(id)
-    if (!producto) throw new Error('Producto no encontrado')
-    return producto
+  // Listar productos por nombre de cargo (string)
+  public async listarPorCargoNombre(nombreCargo: string) {
+    const productos = await Producto.query()
+      .where('cargo_asignado', nombreCargo)
+      .orderBy('id_producto', 'asc')
+    return productos
   }
 
-  // Actualizar un producto
-  async actualizarProducto(id: number, data: {
-    nombre?: string
-    descripcion: string | null
-    cargo_asignado: string
-    estado?: boolean
-  }) {
-    const producto = await Producto.find(id)
-    if (!producto) throw new Error('Producto no encontrado')
-    producto.merge(data)
+  // Actualizar producto
+  public async actualizar(id: number, datos: any) {
+    const producto = await Producto.findOrFail(id)
+    producto.merge(datos)
     await producto.save()
     return producto
   }
 
-  // Eliminar un producto
-  async eliminarProducto(id: number) {
-    const producto = await Producto.find(id)
-    if (!producto) throw new Error('Producto no encontrado')
+  // Eliminar producto
+  public async eliminar(id: number) {
+    const producto = await Producto.findOrFail(id)
     await producto.delete()
-    return { message: 'Producto eliminado con éxito' }
+    return { mensaje: 'Producto eliminado correctamente' }
   }
 }

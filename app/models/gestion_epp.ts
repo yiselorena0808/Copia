@@ -5,6 +5,7 @@ import Usuario from '#models/usuario'
 import Empresa from '#models/empresa'
 import Area from '#models/area'
 import Cargo from './cargo.js'
+import Producto from './producto.js'
 
 export default class GestionEpp extends BaseModel {
   public static table = 'gestion_epp'
@@ -28,7 +29,10 @@ export default class GestionEpp extends BaseModel {
   declare id_cargo: number
 
   @column()
-  declare productos: string
+  declare id_producto: number
+
+  @column()
+  declare cantidad: number
 
   @column()
   declare importancia: string
@@ -64,4 +68,9 @@ export default class GestionEpp extends BaseModel {
     foreignKey: 'id_cargo',
   })
   declare cargo: BelongsTo<typeof Cargo>
+
+  @belongsTo(()=> Producto,{
+    foreignKey: 'id_producto',
+  })
+  declare productos: BelongsTo<typeof Producto>
 }

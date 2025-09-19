@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken'
 const SECRET = process.env.JWT_SECRET || 'sstrict'
 
 class UsuarioService {
+  // Registrar usuario
   async register(
     id_empresa: number,
     id_area: number,
@@ -43,6 +44,7 @@ class UsuarioService {
     }
   }
 
+  // Login
   async login(correo_electronico: string, contrasena: string) {
     if (!correo_electronico || !contrasena) {
       throw new Error('Campos obligatorios')
@@ -64,7 +66,7 @@ class UsuarioService {
         id: usuario.id,
         correoElectronico: usuario.correo_electronico,
         id_empresa: usuario.id_empresa,
-        nombre: `${usuario.nombre} ${usuario.apellido}`, // 👈 nombre completo
+        nombre: `${usuario.nombre} ${usuario.apellido}`,
       },
       SECRET,
       { expiresIn: '1h' }
@@ -73,13 +75,7 @@ class UsuarioService {
     return { mensaje: 'Login correcto', token, user: usuario }
   }
 
-  async listar(empresaId: number) {
-    return await Usuario.query()
-      .where('id_empresa', empresaId)
-      .preload('empresa')
-      .preload('area')
-  }
-
+  // Listar usuario por ID y empresa
   async listarId(id: number, empresaId: number) {
     return await Usuario.query()
       .where('id', id)
@@ -89,6 +85,15 @@ class UsuarioService {
       .first()
   }
 
+  // 🔹 NUEVA FUNCIÓN: listar todos los usuarios de una empresa
+  async listarPorEmpresa(empresaId: number) {
+    return await Usuario.query()
+      .where('id_empresa', empresaId)
+      .preload('empresa')
+      .preload('area')
+  }
+
+  // Actualizar usuario
   async actualizar(id: number, datos: Partial<Usuario>, empresaId: number) {
     const usuario = await Usuario.query()
       .where('id', id)
@@ -101,6 +106,7 @@ class UsuarioService {
     return usuario
   }
 
+  // Eliminar usuario
   async eliminar(id: number, empresaId: number) {
     const usuario = await Usuario.query()
       .where('id', id)
@@ -112,6 +118,7 @@ class UsuarioService {
     return { mensaje: 'Usuario eliminado' }
   }
 
+  // Conteo de usuarios
   async conteo() {
     const usuarios = await Usuario.query()
     return { total: usuarios.length, usuarios }

@@ -20,7 +20,7 @@ export default class ReportesController {
         id_usuario: usuario.id,
         id_empresa: usuario.id_empresa,
         nombre_usuario: usuario.nombre,
-        estado: "Pendiente"
+        estado: request.input("estado"),
       }
 
       // Archivos opcionales
