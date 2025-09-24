@@ -33,5 +33,4 @@ export default class Producto extends BaseModel {
     foreignKey: 'id_cargo',
   })
   declare cargos: BelongsTo<typeof Cargo>
-
 }

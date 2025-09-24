@@ -21,3 +21,5 @@ import './routes/CargosRoutes.js'
 import './routes/DashboardRoutes.js'
 
 import './routes/ProductosRoutes.js'
+
+import './routes/PasswordRouter.js'

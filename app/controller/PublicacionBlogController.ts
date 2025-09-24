@@ -1,100 +1,83 @@
-import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext"
-import PublicacionBlogService from "#services/PublicacionBlogService"
+import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import PublicacionBlogService from '#services/PublicacionBlogService'
 
 export default class PublicacionBlogController {
-  private service = new PublicacionBlogService()
+  private service: PublicacionBlogService
 
-  // Crear publicación con archivos
-  public async crear({ request, auth, response }: HttpContextContract) {
+  constructor() {
+    // Aseguramos que siempre exista la instancia del servicio
+    this.service = new PublicacionBlogService()
+  }
+
+  public async crear({ request, response, auth }: HttpContextContract) {
     try {
-      const usuario = auth.user
-      if (!usuario) return response.unauthorized({ message: "No autenticado" })
+      const usuario = auth.user // Usar el auth oficial en lugar de (request as any).user
+      if (!usuario) {
+        return response.unauthorized({ error: 'No autenticado' })
+      }
 
-      // Archivos de multipart/form-data
-      const imagen = request.file("imagen")
-      const archivo = request.file("archivo")
-
-      const payload = request.only(["titulo", "descripcion", "id_empresa"])
+      const imagen = request.file('imagen')
+      const archivo = request.file('archivo')
+      const payload = request.only(['titulo', 'descripcion', 'fecha_actividad'])
 
       const blog = await this.service.crear({
         ...payload,
-        imagen,
-        archivo,
         id_usuario: usuario.id,
         nombre_usuario: usuario.nombre,
+        id_empresa: usuario.id_empresa,
+        imagen,
+        archivo,
       })
 
       return response.created(blog)
-    } catch (error) {
-      return response.badRequest({ message: "Error al crear la publicación", error })
+    } catch (error: any) {
+      console.error('Error en crear publicación:', error) // 👈 log en servidor
+      return response.badRequest({
+        error: 'No se pudo crear la publicación',
+        details: error.message || error,
+      })
     }
   }
 
   public async listarTodos({ response }: HttpContextContract) {
-    try {
-      const blogs = await this.service.listarTodos()
-      return response.ok(blogs)
-    } catch (error) {
-      return response.badRequest({ message: "Error al listar publicaciones", error })
-    }
+    const blogs = await this.service.listarTodos()
+    return response.ok(blogs)
   }
 
   public async listarPorUsuario({ auth, response }: HttpContextContract) {
-    try {
-      const usuario = auth.user
-      if (!usuario) return response.unauthorized({ message: "No autenticado" })
-
-      const blogs = await this.service.listarPorUsuario(usuario.id)
-      return response.ok(blogs)
-    } catch (error) {
-      return response.badRequest({ message: "Error al listar publicaciones", error })
+    const usuario = auth.user
+    if (!usuario) {
+      return response.unauthorized({ error: 'No autenticado' })
     }
+
+    const blogs = await this.service.listarPorUsuario(usuario.id)
+    return response.ok(blogs)
   }
 
   public async listarPorEmpresa({ request, response }: HttpContextContract) {
-    try {
-      const { id_empresa } = request.qs()
-      if (!id_empresa) return response.badRequest({ message: "id_empresa es requerido" })
-
-      const blogs = await this.service.listarPorEmpresa(Number(id_empresa))
-      return response.ok(blogs)
-    } catch (error) {
-      return response.badRequest({ message: "Error al listar publicaciones por empresa", error })
+    const id_empresa = Number(request.qs().id_empresa)
+    if (!id_empresa) {
+      return response.badRequest({ error: 'id_empresa es requerido' })
     }
-  }
 
-  public async obtenerPorId({ params, response }: HttpContextContract) {
-    try {
-      const blog = await this.service.obtenerPorId(Number(params.id))
-      if (!blog) return response.notFound({ message: "Publicación no encontrada" })
-      return response.ok(blog)
-    } catch (error) {
-      return response.badRequest({ message: "Error al obtener la publicación", error })
-    }
+    const blogs = await this.service.listarPorEmpresa(id_empresa)
+    return response.ok(blogs)
   }
 
   public async actualizar({ params, request, response }: HttpContextContract) {
-    try {
-      const imagen = request.file("imagen")
-      const archivo = request.file("archivo")
-      const payload = request.only(["titulo", "descripcion", "id_empresa", "fecha_actividad"])
+    const imagen = request.file('imagen')
+    const archivo = request.file('archivo')
+    const payload: any = request.only(['titulo', 'descripcion', 'fecha_actividad'])
 
-      if (imagen) payload.imagen = imagen
-      if (archivo) payload.archivo = archivo
+    if (imagen) payload.imagen = imagen
+    if (archivo) payload.archivo = archivo
 
-      const blog = await this.service.actualizar(Number(params.id), payload)
-      return response.ok(blog)
-    } catch (error) {
-      return response.badRequest({ message: "Error al actualizar la publicación", error })
-    }
+    const blog = await this.service.actualizar(Number(params.id), payload)
+    return response.ok(blog)
   }
 
   public async eliminar({ params, response }: HttpContextContract) {
-    try {
-      const result = await this.service.eliminar(Number(params.id))
-      return response.ok(result)
-    } catch (error) {
-      return response.badRequest({ message: "Error al eliminar la publicación", error })
-    }
+    const result = await this.service.eliminar(Number(params.id))
+    return response.ok(result)
   }
 }

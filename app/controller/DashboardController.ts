@@ -1,43 +1,58 @@
-// app/Controllers/Http/DashboardController.ts
-import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { HttpContext } from '@adonisjs/core/http'
+
+// Modelos
 import Reporte from '#models/reporte'
 import Usuario from '#models/usuario'
+import ActividadLudica from '#models/actividad_ludica'
+import GestionEpp from '#models/gestion_epp'
+import ListaChequeo from '#models/lista_chequeo'
 
 export default class DashboardController {
-  public async funcionalidades({ request, response }: HttpContextContract) {
+  public async funcionalidades({ request, response }: HttpContext) {
     try {
       const usuario = (request as any).user
-      if (!usuario) return response.status(401).json({ error: 'Usuario no autenticado' })
+      if (!usuario) {
+        return response.status(401).json({ error: 'Usuario no autenticado' })
+      }
 
-      // Contar reportes creados por la empresa
-      const totalCrearReporte = await Reporte.query()
+      // ===================== REPORTES =====================
+      const totalReportes = await Reporte.query()
         .where('id_empresa', usuario.id_empresa)
         .count('* as total')
         .first()
 
-      // Contar reportes listados (simulación)
-      const totalListarReportes = await Reporte.query()
+      // ===================== USUARIOS =====================
+      const totalUsuarios = await Usuario.query()
         .where('id_empresa', usuario.id_empresa)
         .count('* as total')
         .first()
 
-      // Simulación de otras funcionalidades
-      const totalActualizarUsuario = await Usuario.query()
+      // ===================== ACTIVIDADES LÚDICAS =====================
+      const totalActividades = await ActividadLudica.query()
         .where('id_empresa', usuario.id_empresa)
         .count('* as total')
         .first()
 
-      const totalEliminarUsuario = await Usuario.query()
+      // ===================== GESTIÓN EPP =====================
+      const totalGestionEpp = await GestionEpp.query()
         .where('id_empresa', usuario.id_empresa)
         .count('* as total')
         .first()
 
+      // ===================== LISTAS DE CHEQUEO =====================
+      const totalListasChequeo = await ListaChequeo.query()
+        .where('id_empresa', usuario.id_empresa)
+        .count('* as total')
+        .first()
+
+      // ===================== RESPUESTA =====================
       return response.json({
         datos: [
-          { nombre: 'Crear Reporte', total: Number(totalCrearReporte?.$extras.total || 0) },
-          { nombre: 'Listar Reportes', total: Number(totalListarReportes?.$extras.total || 0) },
-          { nombre: 'Actualizar Usuario', total: Number(totalActualizarUsuario?.$extras.total || 0) },
-          { nombre: 'Eliminar Usuario', total: Number(totalEliminarUsuario?.$extras.total || 0) },
+          { nombre: 'Reportes', total: Number(totalReportes?.$extras.total || 0) },
+          { nombre: 'Usuarios', total: Number(totalUsuarios?.$extras.total || 0) },
+          { nombre: 'Actividades Lúdicas', total: Number(totalActividades?.$extras.total || 0) },
+          { nombre: 'Gestión EPP', total: Number(totalGestionEpp?.$extras.total || 0) },
+          { nombre: 'Listas de Chequeo', total: Number(totalListasChequeo?.$extras.total || 0) },
         ]
       })
     } catch (error) {

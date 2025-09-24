@@ -57,15 +57,19 @@
     "@adonisjs/core": "^6.19.0",
     "@adonisjs/cors": "^2.2.1",
     "@adonisjs/lucid": "^21.8.0",
+    "@adonisjs/shield": "^8.2.0",
     "@adonisjs/validator": "^13.0.2",
+    "@sendgrid/mail": "^8.1.6",
     "@types/pg": "^8.15.4",
     "@vinejs/vine": "^3.0.1",
     "bcryptjs": "^3.0.2",
+    "chartjs-plugin-datalabels": "^2.2.0",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "luxon": "^3.6.1",
+    "luxon": "^3.7.2",
     "pg": "^8.16.3",
-    "reflect-metadata": "^0.2.2"
+    "reflect-metadata": "^0.2.2",
+    "sib-api-v3-sdk": "^8.5.0"
   },
   "hotHook": {
     "boundaries": [

@@ -13,7 +13,7 @@ export default class ActividadLudicaController {
         return response.unauthorized({ error: 'Usuario no autenticado' })
       }
 
-      const datos = request.only(['nombre_actividad', 'fecha_actividad', 'descripcion'])
+      const datos = request.only(['nombre_actividad', 'fecha_actividad', 'descripcion']) as any
       datos.id_usuario = user.id
       datos.id_empresa = user.id_empresa
 

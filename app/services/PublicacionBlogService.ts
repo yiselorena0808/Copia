@@ -4,10 +4,10 @@ import cloudinary from "#config/cloudinary"
 interface BlogData {
   titulo?: string
   descripcion?: string
-  imagen?: any       // archivo subido
-  archivo?: any      // archivo subido
+  imagen?: any
+  archivo?: any
   id_empresa?: number
-  fecha_actividad?: Date
+  fecha_actividad?: Date | string
   id_usuario?: number
   nombre_usuario?: string
 }
@@ -18,7 +18,7 @@ export default class PublicacionBlogService {
     let urlArchivo: string | undefined
 
     // Subir imagen a Cloudinary
-    if (data.imagen) {
+    if (data.imagen?.tmpPath) {
       const result = await cloudinary.uploader.upload(data.imagen.tmpPath, {
         folder: "publicaciones",
         upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
@@ -27,7 +27,7 @@ export default class PublicacionBlogService {
     }
 
     // Subir archivo a Cloudinary (PDF, DOCX, etc.)
-    if (data.archivo) {
+    if (data.archivo?.tmpPath) {
       const result = await cloudinary.uploader.upload(data.archivo.tmpPath, {
         folder: "archivos_publicaciones",
         resource_type: "raw",
@@ -43,7 +43,6 @@ export default class PublicacionBlogService {
       fecha_actividad: data.fecha_actividad || new Date(),
     })
 
-    // Notificación en tiempo real
     import("@ioc:Adonis/Addons/Ws").then(Ws => Ws.io.emit("nueva-publicacion", blog))
 
     return blog

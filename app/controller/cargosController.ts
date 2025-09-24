@@ -1,9 +1,10 @@
 import CargoService from "#services/cargoService";
+import { HttpContext } from "@adonisjs/core/http";
 
 const cargoService = new CargoService();
 
 export default class CargosController {
-  async crear({ request, response }) {
+  async crear({ request, response }: HttpContext) {
     try {
       const datos = request.body();
       const cargo = await cargoService.crearCargos(datos);
@@ -13,12 +14,12 @@ export default class CargosController {
     }
   }
 
-  async listar({ response }) {
+  async listar({ response }: HttpContext) {
     const cargos = await cargoService.todosCargos();
     return response.json(cargos);
   }
 
-  async actualizar({ request, response, params }) {
+  async actualizar({ request, response, params }: HttpContext) {
     try {
       const id_cargo = params.id;
       const datos = request.body();
@@ -29,7 +30,7 @@ export default class CargosController {
     }
   }
 
-  async eliminar({ response, params }) {
+  async eliminar({ response, params }: HttpContext) {
     try {
       const id_cargo = params.id;
       await cargoService.eliminarCargos(id_cargo);
