@@ -31,7 +31,7 @@ export default class PublicacionBlogController {
 
       return response.created(blog)
     } catch (error: any) {
-      console.error('Error en crear publicación:', error) // 👈 log en servidor
+      console.error('Error en crear publicación:', error)
       return response.badRequest({
         error: 'No se pudo crear la publicación',
         details: error.message || error,

@@ -1,4 +1,6 @@
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { BaseModel, column, hasMany } from '@adonisjs/lucid/orm'
+import type { HasMany } from '@adonisjs/lucid/types/relations'
+import Producto from './producto.js'
 
 export default class Cargo extends BaseModel {
   public static table = 'cargos'
@@ -7,5 +9,11 @@ export default class Cargo extends BaseModel {
   declare id_cargo: number
 
   @column()
-  declare cargo: String
+  declare cargo: string
+
+  // Relación: un cargo tiene muchos productos
+  @hasMany(() => Producto, {
+    foreignKey: 'id_cargo', // clave en productos
+  })
+  declare productos: HasMany<typeof Producto>
 }

@@ -1,61 +1,37 @@
-import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import ProductoService from '#services/ProductoService'
+import ProductoService from "#services/ProductoService"
+
+const service = new ProductoService()
 
 export default class ProductosController {
-  private productoService = new ProductoService()
-
-  // Crear producto
-  public async crear({ request, response }: HttpContextContract) {
-    try {
-      const datos = request.only(['nombre', 'descripcion', 'cargo_asignado', 'estado'])
-      const producto = await this.productoService.crear(datos)
-      return response.created(producto)
-    } catch (error: any) {
-      return response.badRequest({ error: error.message })
-    }
+  async listar({ response }) {
+    const productos = await service.listar()
+    return response.json(productos)
   }
 
-  // Listar todos los productos
-  public async listar({ response }: HttpContextContract) {
-    try {
-      const productos = await this.productoService.listar()
-      return response.ok(productos)
-    } catch (error: any) {
-      return response.badRequest({ error: error.message })
-    }
+  async crear({ request, response }) {
+    const data = request.only(['nombre', 'descripcion', 'id_cargo', 'estado'])
+    const producto = await service.crear(data)
+    return response.created(producto)
   }
 
-  // Listar productos por nombre de cargo
-  public async listarPorCargo({ params, response }: HttpContextContract) {
-    try {
-      const nombreCargo = params.nombreCargo // ahora es string
-      const productos = await this.productoService.listarPorCargoNombre(nombreCargo)
-      return response.ok(productos)
-    } catch (error: any) {
-      return response.badRequest({ error: error.message })
-    }
+  async actualizar({ params, request, response }) {
+    const data = request.only(['nombre', 'descripcion', 'id_cargo', 'estado'])
+    const producto = await service.actualizar(params.id, data)
+    return response.json(producto)
   }
 
-  // Actualizar producto
-  public async actualizar({ params, request, response }: HttpContextContract) {
-    try {
-      const id = Number(params.id)
-      const datos = request.only(['nombre', 'descripcion', 'cargo_asignado', 'estado'])
-      const producto = await this.productoService.actualizar(id, datos)
-      return response.ok(producto)
-    } catch (error: any) {
-      return response.badRequest({ error: error.message })
-    }
+  async eliminar({ params, response }) {
+    await service.eliminar(params.id)
+    return response.json({ message: 'Producto eliminado' })
   }
 
-  // Eliminar producto
-  public async eliminar({ params, response }: HttpContextContract) {
-    try {
-      const id = Number(params.id)
-      const resultado = await this.productoService.eliminar(id)
-      return response.ok(resultado)
-    } catch (error: any) {
-      return response.badRequest({ error: error.message })
-    }
+  async getByCargo({ params, response }) {
+    const productos = await service.getByCargo(params.id)
+    return response.json(productos)
+  }
+
+  async getByCargoNombre({ params, response }) {
+    const productos = await service.getByCargoNombre(params.nombre)
+    return response.json(productos)
   }
 }

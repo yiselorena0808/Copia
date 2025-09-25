@@ -24,12 +24,14 @@ server.use([
 /**
  * Middleware global de router
  */
-router.use([() => import('@adonisjs/core/bodyparser_middleware')])
+router.use([
+  () => import('@adonisjs/core/bodyparser_middleware'),
+])
 
 /**
- * Named middleware (para usarlos en rutas específicas)
+ * Named middleware (solo si se invocan en rutas específicas)
  */
 export const middleware = router.named({
-  auth: () => import('#middleware/AuthJwt'),// protege con JWT
+  auth: () => import('#middleware/AuthJwt'), // protege con JWT
   empresa: () => import('#middleware/EmpresaMiddleware'), // valida empresa
 })

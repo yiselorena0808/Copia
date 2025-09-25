@@ -1,9 +1,9 @@
 import ProductosController from "../../app/controller/ProductosController.js";
 import Route from "@adonisjs/core/services/router";
-import AuthJwt from "../../app/middleware/auth_jwt.js";
+import AuthJwtMiddleware from "#middleware/auth_jwt";
 
 
-const authJwt= new AuthJwt()
+const authJwt= new AuthJwtMiddleware()
 
 const productosController = new ProductosController();
 // Rutas para productos

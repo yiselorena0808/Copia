@@ -1,24 +1,48 @@
-import Cargo from "#models/cargo";
+import db from '@adonisjs/lucid/services/db'
 
 export default class CargoService {
-  async todosCargos() {
-    return await Cargo.all();
+  async listar() {
+    try {
+      return await db.from('cargos').select('*')
+    } catch (error) {
+      console.error('Error en listar cargos:', error)
+      return []
+    }
   }
 
-  async crearCargos(datos: any) {
-    return await Cargo.create(datos);
+  async crear(data: any) {
+    try {
+      return await db.table('cargos').insert(data).returning('*')
+    } catch (error) {
+      console.error('Error en crear cargo:', error)
+      throw error
+    }
   }
 
-  async actualizarCargos(id_cargo: number, datos: any) {
-    const cargo = await Cargo.findOrFail(id_cargo);
-    cargo.merge(datos);
-    await cargo.save();
-    return cargo;
+  async actualizar(id: number, data: any) {
+    try {
+      return await db.from('cargos').where('id_cargo', id).update(data).returning('*')
+    } catch (error) {
+      console.error('Error en actualizar cargo:', error)
+      throw error
+    }
   }
 
-  async eliminarCargos(id_cargo: number) {
-    const cargo = await Cargo.findOrFail(id_cargo);
-    await cargo.delete();
-    return cargo;
+  async eliminar(id: number) {
+    try {
+      return await db.from('cargos').where('id_cargo', id).delete()
+    } catch (error) {
+      console.error('Error en eliminar cargo:', error)
+      throw error
+    }
+  }
+
+  async productosPorCargo(id: number) {
+    try {
+      return await db.from('productos').where('id_cargo', id).select('*')
+    } catch (error) {
+      console.error('Error en productosPorCargo:', error)
+      return []
+    }
   }
 }

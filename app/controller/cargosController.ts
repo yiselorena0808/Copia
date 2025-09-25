@@ -1,42 +1,37 @@
-import CargoService from "#services/cargoService";
-import { HttpContext } from "@adonisjs/core/http";
+import CargoService from "#services/cargoService"
 
-const cargoService = new CargoService();
+const service = new CargoService()
 
 export default class CargosController {
-  async crear({ request, response }: HttpContext) {
-    try {
-      const datos = request.body();
-      const cargo = await cargoService.crearCargos(datos);
-      return response.status(201).json({ msj: "Cargo creado", cargo });
-    } catch (error) {
-      return response.status(400).json({ error: error.message });
-    }
+  async listar({ response }) {
+    const cargos = await service.listar()
+    return response.json(cargos)
   }
 
-  async listar({ response }: HttpContext) {
-    const cargos = await cargoService.todosCargos();
-    return response.json(cargos);
+  async crear({ request, response }) {
+    const data = request.only(['cargo'])
+    const cargo = await service.crear(data)
+    return response.created(cargo)
   }
 
-  async actualizar({ request, response, params }: HttpContext) {
-    try {
-      const id_cargo = params.id;
-      const datos = request.body();
-      const cargo = await cargoService.actualizarCargos(id_cargo, datos);
-      return response.json({ msj: "Cargo actualizado", cargo });
-    } catch (error) {
-      return response.status(404).json({ error: "Cargo no encontrado" });
-    }
+  async actualizar({ params, request, response }) {
+    const data = request.only(['cargo'])
+    const cargo = await service.actualizar(params.id, data)
+    return response.json(cargo)
   }
 
-  async eliminar({ response, params }: HttpContext) {
-    try {
-      const id_cargo = params.id;
-      await cargoService.eliminarCargos(id_cargo);
-      return response.json({ msj: "Cargo eliminado" });
-    } catch (error) {
-      return response.status(404).json({ error: "Cargo no encontrado" });
-    }
+  async eliminar({ params, response }) {
+    await service.eliminar(params.id)
+    return response.json({ message: 'Cargo eliminado' })
+  }
+
+  async productosPorCargo({ params, response }) {
+    const productos = await service.productosPorCargoId(params.id)
+    return response.json(productos)
+  }
+
+  async productosPorCargoNombre({ params, response }) {
+    const productos = await service.productosPorCargoNombre(params.nombre)
+    return response.json(productos)
   }
 }

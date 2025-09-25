@@ -1,38 +1,60 @@
-import Producto from "#models/producto"
+import db from '@adonisjs/lucid/services/db'
 
 export default class ProductoService {
-  // Crear producto
-  public async crear(datos: any) {
-    const producto = await Producto.create(datos)
-    return producto
+  async listar() {
+    try {
+      return await db.from('productos').select('*')
+    } catch (error) {
+      console.error('Error en listar productos:', error)
+      return []
+    }
   }
 
-  // Listar todos los productos
-  public async listar() {
-    const productos = await Producto.query().orderBy('id_producto', 'asc')
-    return productos
+  async crear(data: any) {
+    try {
+      return await db.table('productos').insert(data).returning('*')
+    } catch (error) {
+      console.error('Error en crear producto:', error)
+      throw error
+    }
   }
 
-  // Listar productos por nombre de cargo (string)
-  public async listarPorCargoNombre(nombreCargo: string) {
-    const productos = await Producto.query()
-      .where('cargo_asignado', nombreCargo)
-      .orderBy('id_producto', 'asc')
-    return productos
+  async actualizar(id: number, data: any) {
+    try {
+      return await db.from('productos').where('id_producto', id).update(data).returning('*')
+    } catch (error) {
+      console.error('Error en actualizar producto:', error)
+      throw error
+    }
   }
 
-  // Actualizar producto
-  public async actualizar(id: number, datos: any) {
-    const producto = await Producto.findOrFail(id)
-    producto.merge(datos)
-    await producto.save()
-    return producto
+  async eliminar(id: number) {
+    try {
+      return await db.from('productos').where('id_producto', id).delete()
+    } catch (error) {
+      console.error('Error en eliminar producto:', error)
+      throw error
+    }
   }
 
-  // Eliminar producto
-  public async eliminar(id: number) {
-    const producto = await Producto.findOrFail(id)
-    await producto.delete()
-    return { mensaje: 'Producto eliminado correctamente' }
+  async getByCargo(id: number) {
+    try {
+      return await db.from('productos').where('id_cargo', id).select('*')
+    } catch (error) {
+      console.error('Error en getByCargo:', error)
+      return []
+    }
+  }
+
+  async getByCargoNombre(nombre: string) {
+    try {
+      return await db.from('productos')
+        .join('cargos', 'productos.id_cargo', 'cargos.id_cargo')
+        .where('cargos.cargo', nombre)
+        .select('productos.*')
+    } catch (error) {
+      console.error('Error en getByCargoNombre:', error)
+      return []
+    }
   }
 }

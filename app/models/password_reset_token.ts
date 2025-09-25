@@ -1,8 +1,9 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 
-export default class Contrasena extends BaseModel {
-  public static table = 'contrasenas'
+export default class PasswordResetToken extends BaseModel {
+  public static table = 'password_reset_tokens'
+
   @column({ isPrimary: true })
   public id?: number
 
@@ -13,8 +14,5 @@ export default class Contrasena extends BaseModel {
   public token?: string
 
   @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
-
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
+  public created_at?: DateTime
 }

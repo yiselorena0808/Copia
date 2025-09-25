@@ -1,8 +1,6 @@
 import { DateTime } from 'luxon'
-import type { ManyToMany } from '@adonisjs/lucid/types/relations'
-import GestionEpp from '#models/gestion_epp'
-import { BaseModel, belongsTo, column} from '@adonisjs/lucid/orm'
-import type { BelongsTo} from '@adonisjs/lucid/types/relations'
+import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import Cargo from './cargo.js'
 
 export default class Producto extends BaseModel {
@@ -18,7 +16,7 @@ export default class Producto extends BaseModel {
   declare descripcion: string | null
 
   @column()
-  declare cargo_asignado: string
+  declare id_cargo: number
 
   @column()
   declare estado: boolean
@@ -29,8 +27,9 @@ export default class Producto extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
+  // Relación: un producto pertenece a un cargo
   @belongsTo(() => Cargo, {
     foreignKey: 'id_cargo',
   })
-  declare cargos: BelongsTo<typeof Cargo>
+  declare cargo: BelongsTo<typeof Cargo>
 }

@@ -8,7 +8,7 @@ export default class extends BaseSchema {
       table.increments('id_producto')
       table.string('nombre').notNullable()
       table.string('descripcion')
-      table.string('cargo_asignado').references('id_cargo').inTable('cargos').onDelete('CASCADE').notNullable()
+      table.integer('id_cargo').references('id_cargo').inTable('cargos').onDelete('CASCADE').notNullable()
       table.boolean('estado').defaultTo(true)
       table.timestamp('created_at', { useTz: true }).defaultTo(this.now())
       table.timestamp('updated_at', { useTz: true }).defaultTo(this.now())
