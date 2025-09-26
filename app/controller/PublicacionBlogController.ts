@@ -1,83 +1,62 @@
-import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import PublicacionBlogService from '#services/PublicacionBlogService'
 
+const service = new PublicacionBlogService()
+
 export default class PublicacionBlogController {
-  private service: PublicacionBlogService
 
-  constructor() {
-    // Aseguramos que siempre exista la instancia del servicio
-    this.service = new PublicacionBlogService()
+  async listar({ response }: HttpContextContract) {
+    const publicaciones = await service.listar()
+    return response.json(publicaciones)
   }
 
-  public async crear({ request, response, auth }: HttpContextContract) {
-    try {
-      const usuario = auth.user // Usar el auth oficial en lugar de (request as any).user
-      if (!usuario) {
-        return response.unauthorized({ error: 'No autenticado' })
-      }
-
-      const imagen = request.file('imagen')
-      const archivo = request.file('archivo')
-      const payload = request.only(['titulo', 'descripcion', 'fecha_actividad'])
-
-      const blog = await this.service.crear({
-        ...payload,
-        id_usuario: usuario.id,
-        nombre_usuario: usuario.nombre,
-        id_empresa: usuario.id_empresa,
-        imagen,
-        archivo,
-      })
-
-      return response.created(blog)
-    } catch (error: any) {
-      console.error('Error en crear publicación:', error)
-      return response.badRequest({
-        error: 'No se pudo crear la publicación',
-        details: error.message || error,
-      })
-    }
+  async listarPorEmpresa({ params, response }: HttpContextContract) {
+    const publicaciones = await service.listarPorEmpresa(Number(params.id_empresa))
+    return response.json(publicaciones)
   }
 
-  public async listarTodos({ response }: HttpContextContract) {
-    const blogs = await this.service.listarTodos()
-    return response.ok(blogs)
-  }
+  async crear({ request, response }: HttpContextContract) {
+    // Obtener usuario del request (setiado por tu middleware)
+    const user = (request as any).user
+    if (!user) return response.unauthorized({ message: 'Usuario no autenticado' })
 
-  public async listarPorUsuario({ auth, response }: HttpContextContract) {
-    const usuario = auth.user
-    if (!usuario) {
-      return response.unauthorized({ error: 'No autenticado' })
-    }
+    // Campos enviados desde el frontend
+    const data = request.only(['titulo', 'descripcion', 'fecha_actividad'])
 
-    const blogs = await this.service.listarPorUsuario(usuario.id)
-    return response.ok(blogs)
-  }
+    // Agregar automáticamente los campos obligatorios
+    data.id_usuario = user.id
+    data.nombre_usuario = user.nombre
+    data.id_empresa = user.id_empresa
 
-  public async listarPorEmpresa({ request, response }: HttpContextContract) {
-    const id_empresa = Number(request.qs().id_empresa)
-    if (!id_empresa) {
-      return response.badRequest({ error: 'id_empresa es requerido' })
-    }
-
-    const blogs = await this.service.listarPorEmpresa(id_empresa)
-    return response.ok(blogs)
-  }
-
-  public async actualizar({ params, request, response }: HttpContextContract) {
     const imagen = request.file('imagen')
     const archivo = request.file('archivo')
-    const payload: any = request.only(['titulo', 'descripcion', 'fecha_actividad'])
 
-    if (imagen) payload.imagen = imagen
-    if (archivo) payload.archivo = archivo
+    const imagenPath = imagen?.tmpPath
+    const archivoPath = archivo?.tmpPath
 
-    const blog = await this.service.actualizar(Number(params.id), payload)
-    return response.ok(blog)
+    try {
+      const publicacion = await service.crear(data, archivoPath, imagenPath)
+      return response.json(publicacion)
+    } catch (error) {
+      console.error('Error en crear publicación:', error)
+      return response.status(500).json({ message: error.message })
+    }
   }
 
-  public async eliminar({ params, response }: HttpContextContract) {
-    const result = await this.service.eliminar(Number(params.id))
-    return response.ok(result)
+  async actualizar({ params, request, response }: HttpContextContract) {
+    const data = request.only(['titulo','fecha_actividad','descripcion'])
+    const imagen = request.file('imagen')
+    const archivo = request.file('archivo')
+
+    const imagenPath = imagen ? imagen.tmpPath : undefined
+    const archivoPath = archivo ? archivo.tmpPath : undefined
+
+    const publicacion = await service.actualizar(Number(params.id), data, archivoPath, imagenPath)
+    return response.json(publicacion)
+  }
+
+  async eliminar({ params, response }: HttpContextContract) {
+    const result = await service.eliminar(Number(params.id))
+    return response.json(result)
   }
 }

@@ -1,3 +1,4 @@
+// app/Controllers/Http/ProductosController.ts
 import ProductoService from "#services/ProductoService"
 
 const service = new ProductoService()
@@ -25,13 +26,9 @@ export default class ProductosController {
     return response.json({ message: 'Producto eliminado' })
   }
 
-  async getByCargo({ params, response }) {
-    const productos = await service.getByCargo(params.id)
-    return response.json(productos)
-  }
+  public async listarPorCargo(id_cargo: number) {
+  return await Producto.query().where('id_cargo', id_cargo).andWhere('estado', 'activo');
 
-  async getByCargoNombre({ params, response }) {
-    const productos = await service.getByCargoNombre(params.nombre)
-    return response.json(productos)
-  }
+}
+
 }

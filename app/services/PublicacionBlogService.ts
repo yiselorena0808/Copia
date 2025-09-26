@@ -1,80 +1,91 @@
-import PublicacionBlog from "#models/publicacion_blog"
-import cloudinary from "#config/cloudinary"
+import { v2 as cloudinary } from 'cloudinary'
+import PublicacionBlog from '#models/publicacion_blog'
 
-interface BlogData {
-  titulo?: string
-  descripcion?: string
-  imagen?: any
-  archivo?: any
-  id_empresa?: number
-  fecha_actividad?: Date | string
-  id_usuario?: number
-  nombre_usuario?: string
-}
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
 
 export default class PublicacionBlogService {
-  public async crear(data: BlogData) {
-    let urlImagen: string | undefined
-    let urlArchivo: string | undefined
+  // Listar todas las publicaciones
+  async listar() {
+    return await PublicacionBlog.query().preload('usuario').preload('empresa')
+  }
 
-    // Subir imagen a Cloudinary
-    if (data.imagen?.tmpPath) {
-      const result = await cloudinary.uploader.upload(data.imagen.tmpPath, {
-        folder: "publicaciones",
+  // Listar publicaciones por empresa
+  async listarPorEmpresa(id_empresa: number) {
+    return await PublicacionBlog.query()
+      .where('id_empresa', id_empresa)
+      .preload('usuario')
+      .preload('empresa')
+  }
+
+  // Crear nueva publicación
+  async crear(data: any, archivoPath?: string, imagenPath?: string) {
+    const publicacion = new PublicacionBlog()
+    publicacion.id_usuario = data.id_usuario
+    publicacion.nombre_usuario = data.nombre_usuario
+    publicacion.titulo = data.titulo
+    publicacion.fecha_actividad = data.fecha_actividad
+    publicacion.descripcion = data.descripcion
+    publicacion.id_empresa = data.id_empresa
+
+    if (imagenPath) {
+      const imgResult = await cloudinary.uploader.upload(imagenPath, {
+        folder: 'imagenes_publicaciones',
+        resource_type: 'auto',
         upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
       })
-      urlImagen = result.secure_url
+      publicacion.imagen = imgResult.secure_url
     }
 
-    // Subir archivo a Cloudinary (PDF, DOCX, etc.)
-    if (data.archivo?.tmpPath) {
-      const result = await cloudinary.uploader.upload(data.archivo.tmpPath, {
-        folder: "archivos_publicaciones",
-        resource_type: "raw",
+    if (archivoPath) {
+      const fileResult = await cloudinary.uploader.upload(archivoPath, {
+        folder: 'archivos_publicaciones',
+        resource_type: 'auto',
         upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
       })
-      urlArchivo = result.secure_url
+      publicacion.archivo = fileResult.secure_url
     }
 
-    const blog = await PublicacionBlog.create({
-      ...data,
-      imagen: urlImagen,
-      archivo: urlArchivo,
-      fecha_actividad: data.fecha_actividad || new Date(),
-    })
-
-    import("@ioc:Adonis/Addons/Ws").then(Ws => Ws.io.emit("nueva-publicacion", blog))
-
-    return blog
+    await publicacion.save()
+    return publicacion
   }
 
-  public async listarTodos() {
-    return PublicacionBlog.query()
+  // Actualizar publicación
+  async actualizar(id: number, data: any, archivoPath?: string, imagenPath?: string) {
+    const publicacion = await PublicacionBlog.findOrFail(id)
+    publicacion.titulo = data.titulo ?? publicacion.titulo
+    publicacion.descripcion = data.descripcion ?? publicacion.descripcion
+    publicacion.fecha_actividad = data.fecha_actividad ?? publicacion.fecha_actividad
+
+    if (imagenPath) {
+      const imgResult = await cloudinary.uploader.upload(imagenPath, {
+        folder: 'imagenes_publicaciones',
+        resource_type: 'auto',
+        upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
+      })
+      publicacion.imagen = imgResult.secure_url
+    }
+
+    if (archivoPath) {
+      const fileResult = await cloudinary.uploader.upload(archivoPath, {
+        folder: 'archivos_publicaciones',
+        resource_type: 'auto',
+        upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
+      })
+      publicacion.archivo = fileResult.secure_url
+    }
+
+    await publicacion.save()
+    return publicacion
   }
 
-  public async listarPorUsuario(id_usuario: number) {
-    return PublicacionBlog.query().where("id_usuario", id_usuario)
-  }
-
-  public async listarPorEmpresa(id_empresa: number) {
-    return PublicacionBlog.query().where("id_empresa", id_empresa)
-  }
-
-  public async obtenerPorId(id: number) {
-    return PublicacionBlog.find(id)
-  }
-
-  public async actualizar(id: number, data: BlogData) {
-    const blog = await PublicacionBlog.findOrFail(id)
-    blog.merge(data)
-    await blog.save()
-    return blog
-  }
-
-  public async eliminar(id: number) {
-    const blog = await PublicacionBlog.findOrFail(id)
-    await blog.delete()
-    return { message: "Publicación eliminada correctamente" }
+  // Eliminar publicación
+  async eliminar(id: number) {
+    const publicacion = await PublicacionBlog.findOrFail(id)
+    await publicacion.delete()
+    return { mensaje: 'Publicación eliminada' }
   }
 }
-

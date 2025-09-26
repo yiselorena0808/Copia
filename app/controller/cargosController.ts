@@ -21,7 +21,7 @@ export default class CargosController {
   }
 
   async eliminar({ params, response }) {
-    await service.eliminar(params.id)
+    await service.eliminar(params.id_cargo)
     return response.json({ message: 'Cargo eliminado' })
   }
 

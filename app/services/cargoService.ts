@@ -1,48 +1,36 @@
-import db from '@adonisjs/lucid/services/db'
+// start/services/cargoService.ts
+import Cargo from '#models/cargo'
+import Producto from '#models/Producto'
 
 export default class CargoService {
-  async listar() {
-    try {
-      return await db.from('cargos').select('*')
-    } catch (error) {
-      console.error('Error en listar cargos:', error)
-      return []
-    }
+  public async listar() {
+    return await Cargo.all()
   }
 
-  async crear(data: any) {
-    try {
-      return await db.table('cargos').insert(data).returning('*')
-    } catch (error) {
-      console.error('Error en crear cargo:', error)
-      throw error
-    }
+  public async crear(data: { cargo: string }) {
+    const cargo = await Cargo.create(data)
+    return cargo
   }
 
-  async actualizar(id: number, data: any) {
-    try {
-      return await db.from('cargos').where('id_cargo', id).update(data).returning('*')
-    } catch (error) {
-      console.error('Error en actualizar cargo:', error)
-      throw error
-    }
+  public async actualizar(id_cargo: number, data: { cargo: string }) {
+    const cargo = await Cargo.findOrFail(id_cargo)
+    cargo.merge(data)
+    await cargo.save()
+    return cargo
   }
 
-  async eliminar(id: number) {
-    try {
-      return await db.from('cargos').where('id_cargo', id).delete()
-    } catch (error) {
-      console.error('Error en eliminar cargo:', error)
-      throw error
-    }
+  public async eliminar(id_cargo: number) {
+    const cargo = await Cargo.findOrFail(id_cargo)
+    await cargo.delete()
   }
 
-  async productosPorCargo(id: number) {
-    try {
-      return await db.from('productos').where('id_cargo', id).select('*')
-    } catch (error) {
-      console.error('Error en productosPorCargo:', error)
-      return []
-    }
+  public async productosPorCargoId(id_cargo: number) {
+    const cargo = await Cargo.query().where('id_cargo', id_cargo).preload('productos').firstOrFail()
+    return cargo.productos
+  }
+
+  public async productosPorCargoNombre(nombre: string) {
+    const cargo = await Cargo.query().where('cargo', nombre).preload('productos').firstOrFail()
+    return cargo.productos
   }
 }
